@@ -7,8 +7,8 @@ load(
 go_library(
     name = "go_default_library",
     srcs = [
-        "certificate_controller.go",
-        "certificate_controller_utils.go",
+        "controller.go",
+        "controller_utils.go",
     ],
     importpath = "k8s.io/kubernetes/pkg/controller/certificates",
     visibility = ["//visibility:public"],
@@ -55,8 +55,8 @@ filegroup(
 go_test(
     name = "go_default_test",
     srcs = [
-        "certificate_controller_test.go",
-        "certificate_controller_utils_test.go",
+        "controller_test.go",
+        "controller_utils_test.go",
     ],
     embed = [":go_default_library"],
     deps = [
