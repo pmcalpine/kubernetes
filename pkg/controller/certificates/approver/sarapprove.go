@@ -42,12 +42,13 @@ type sarApprover struct {
 	recognizers []csrRecognizer
 }
 
-func NewCSRApprovingController(client clientset.Interface, csrInformer certificatesinformers.CertificateSigningRequestInformer) *certificates.CertificateController {
+// NewCSRApprovingController returns a new certificates Controller which approves CSRs.
+func NewCSRApprovingController(client clientset.Interface, csrInformer certificatesinformers.CertificateSigningRequestInformer) *certificates.Controller {
 	approver := &sarApprover{
 		client:      client,
 		recognizers: recognizers(),
 	}
-	return certificates.NewCertificateController(
+	return certificates.NewController(
 		client,
 		csrInformer,
 		approver.handle,
@@ -106,7 +107,7 @@ func (a *sarApprover) handle(csr *capi.CertificateSigningRequest) error {
 	}
 
 	if len(tried) != 0 {
-		return certificates.IgnorableError("recognized csr %q as %v but subject access review was not approved", csr.Name, tried)
+		return certificates.NewIgnorableError("recognized csr %q as %v but subject access review was not approved", csr.Name, tried)
 	}
 
 	return nil

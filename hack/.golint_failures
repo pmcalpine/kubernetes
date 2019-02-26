@@ -74,9 +74,6 @@ pkg/cloudprovider/providers/vsphere
 pkg/cloudprovider/providers/vsphere/vclib
 pkg/controller
 pkg/controller/apis/config/v1alpha1
-pkg/controller/certificates
-pkg/controller/certificates/approver
-pkg/controller/certificates/signer
 pkg/controller/clusterroleaggregation
 pkg/controller/daemon
 pkg/controller/deployment

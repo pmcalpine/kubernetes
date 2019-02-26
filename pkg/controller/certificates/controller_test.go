@@ -30,7 +30,7 @@ import (
 
 // TODO flesh this out to cover things like not being able to find the csr in the cache, not
 // auto-approving, etc.
-func TestCertificateController(t *testing.T) {
+func TestController(t *testing.T) {
 
 	csr := &certificates.CertificateSigningRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -54,7 +54,7 @@ func TestCertificateController(t *testing.T) {
 		return nil
 	}
 
-	controller := NewCertificateController(
+	controller := NewController(
 		client,
 		informerFactory.Certificates().V1beta1().CertificateSigningRequests(),
 		handler,

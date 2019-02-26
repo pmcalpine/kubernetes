@@ -39,7 +39,8 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 )
 
-type CertificateController struct {
+// Controller is an abstract controller for managing CSRs.
+type Controller struct {
 	kubeClient clientset.Interface
 
 	csrLister  certificateslisters.CertificateSigningRequestLister
@@ -50,17 +51,18 @@ type CertificateController struct {
 	queue workqueue.RateLimitingInterface
 }
 
-func NewCertificateController(
+// NewController creates and returns a new Controller.
+func NewController(
 	kubeClient clientset.Interface,
 	csrInformer certificatesinformers.CertificateSigningRequestInformer,
 	handler func(*certificates.CertificateSigningRequest) error,
-) *CertificateController {
+) *Controller {
 	// Send events to the apiserver
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 
-	cc := &CertificateController{
+	cc := &Controller{
 		kubeClient: kubeClient,
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.NewMaxOfRateLimiter(
 			workqueue.NewItemExponentialFailureRateLimiter(200*time.Millisecond, 1000*time.Second),
@@ -106,7 +108,7 @@ func NewCertificateController(
 }
 
 // Run the main goroutine responsible for watching and syncing jobs.
-func (cc *CertificateController) Run(workers int, stopCh <-chan struct{}) {
+func (cc *Controller) Run(workers int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 	defer cc.queue.ShutDown()
 
@@ -125,13 +127,13 @@ func (cc *CertificateController) Run(workers int, stopCh <-chan struct{}) {
 }
 
 // worker runs a thread that dequeues CSRs, handles them, and marks them done.
-func (cc *CertificateController) worker() {
+func (cc *Controller) worker() {
 	for cc.processNextWorkItem() {
 	}
 }
 
 // processNextWorkItem deals with one key off the queue.  It returns false when it's time to quit.
-func (cc *CertificateController) processNextWorkItem() bool {
+func (cc *Controller) processNextWorkItem() bool {
 	cKey, quit := cc.queue.Get()
 	if quit {
 		return false
@@ -153,7 +155,7 @@ func (cc *CertificateController) processNextWorkItem() bool {
 
 }
 
-func (cc *CertificateController) enqueueCertificateRequest(obj interface{}) {
+func (cc *Controller) enqueueCertificateRequest(obj interface{}) {
 	key, err := controller.KeyFunc(obj)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Couldn't get key for object %+v: %v", obj, err))
@@ -166,7 +168,7 @@ func (cc *CertificateController) enqueueCertificateRequest(obj interface{}) {
 // been approved and meets policy expectations, generate an X509 cert using the
 // cluster CA assets. If successful it will update the CSR approve subresource
 // with the signed certificate.
-func (cc *CertificateController) syncFunc(key string) error {
+func (cc *Controller) syncFunc(key string) error {
 	startTime := time.Now()
 	defer func() {
 		klog.V(4).Infof("Finished syncing certificate request %q (%v)", key, time.Since(startTime))
@@ -191,16 +193,18 @@ func (cc *CertificateController) syncFunc(key string) error {
 	return cc.handler(csr)
 }
 
-// IgnorableError returns an error that we shouldn't handle (i.e. log) because
-// it's spammy and usually user error. Instead we will log these errors at a
-// higher log level. We still need to throw these errors to signal that the
-// sync should be retried.
-func IgnorableError(s string, args ...interface{}) ignorableError {
-	return ignorableError(fmt.Sprintf(s, args...))
+// IgnorableError is an error that we shouldn't handle.
+//
+// These errors are spammy and usually user error. Instead we will log these
+// errors at a higher log level. We still need to return these errors to signal
+// that the sync should be retried.
+type IgnorableError string
+
+// NewIgnorableError returns a new IgnorableError.
+func NewIgnorableError(s string, args ...interface{}) IgnorableError {
+	return IgnorableError(fmt.Sprintf(s, args...))
 }
 
-type ignorableError string
-
-func (e ignorableError) Error() string {
+func (e IgnorableError) Error() string {
 	return string(e)
 }

@@ -36,17 +36,18 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 )
 
+// NewCSRSigningController returns a new certificates Controller which signs approved CSRs.
 func NewCSRSigningController(
 	client clientset.Interface,
 	csrInformer certificatesinformers.CertificateSigningRequestInformer,
 	caFile, caKeyFile string,
 	certificateDuration time.Duration,
-) (*certificates.CertificateController, error) {
+) (*certificates.Controller, error) {
 	signer, err := newCFSSLSigner(caFile, caKeyFile, client, certificateDuration)
 	if err != nil {
 		return nil, err
 	}
-	return certificates.NewCertificateController(
+	return certificates.NewController(
 		client,
 		csrInformer,
 		signer.handle,

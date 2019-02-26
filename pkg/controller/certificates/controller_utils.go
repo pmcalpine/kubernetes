@@ -25,6 +25,7 @@ func IsCertificateRequestApproved(csr *certificates.CertificateSigningRequest) b
 	return approved && !denied
 }
 
+// GetCertApprovalCondition returns whether a CSR has been approved and/or denied.
 func GetCertApprovalCondition(status *certificates.CertificateSigningRequestStatus) (approved bool, denied bool) {
 	for _, c := range status.Conditions {
 		if c.Type == certificates.CertificateApproved {
