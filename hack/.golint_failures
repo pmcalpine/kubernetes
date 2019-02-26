@@ -78,7 +78,6 @@ pkg/controller/certificates
 pkg/controller/certificates/approver
 pkg/controller/certificates/signer
 pkg/controller/clusterroleaggregation
-pkg/controller/cronjob
 pkg/controller/daemon
 pkg/controller/deployment
 pkg/controller/disruption
