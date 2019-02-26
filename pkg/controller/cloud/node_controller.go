@@ -41,13 +41,14 @@ import (
 	nodeutil "k8s.io/kubernetes/pkg/util/node"
 )
 
-var UpdateNodeSpecBackoff = wait.Backoff{
+var updateNodeSpecBackoff = wait.Backoff{
 	Steps:    20,
 	Duration: 50 * time.Millisecond,
 	Jitter:   1.0,
 }
 
-type CloudNodeController struct {
+// NodeController manages nodes from a cloud provider.
+type NodeController struct {
 	nodeInformer coreinformers.NodeInformer
 	kubeClient   clientset.Interface
 	recorder     record.EventRecorder
@@ -61,16 +62,16 @@ const (
 	// nodeStatusUpdateRetry controls the number of retries of writing NodeStatus update.
 	nodeStatusUpdateRetry = 5
 
-	// The amount of time the nodecontroller should sleep between retrying NodeStatus updates
+	// retrySleepTime is the amount of time the nodecontroller should sleep between retrying NodeStatus updates
 	retrySleepTime = 20 * time.Millisecond
 )
 
-// NewCloudNodeController creates a CloudNodeController object
-func NewCloudNodeController(
+// NewNodeController creates a NodeController object
+func NewNodeController(
 	nodeInformer coreinformers.NodeInformer,
 	kubeClient clientset.Interface,
 	cloud cloudprovider.Interface,
-	nodeStatusUpdateFrequency time.Duration) *CloudNodeController {
+	nodeStatusUpdateFrequency time.Duration) *NodeController {
 
 	eventBroadcaster := record.NewBroadcaster()
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "cloud-node-controller"})
@@ -82,7 +83,7 @@ func NewCloudNodeController(
 		klog.V(0).Infof("No api server defined - no events will be sent to API server.")
 	}
 
-	cnc := &CloudNodeController{
+	cnc := &NodeController{
 		nodeInformer:              nodeInformer,
 		kubeClient:                kubeClient,
 		recorder:                  recorder,
@@ -93,17 +94,19 @@ func NewCloudNodeController(
 	// Use shared informer to listen to add/update of nodes. Note that any nodes
 	// that exist before node controller starts will show up in the update method
 	cnc.nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    cnc.AddCloudNode,
-		UpdateFunc: cnc.UpdateCloudNode,
+		AddFunc:    cnc.AddNode,
+		UpdateFunc: cnc.UpdateNode,
 	})
 
 	return cnc
 }
 
+// Run starts the NodeController.
+//
 // This controller updates newly registered nodes with information
 // from the cloud provider. This call is blocking so should be called
-// via a goroutine
-func (cnc *CloudNodeController) Run(stopCh <-chan struct{}) {
+// via a goroutine.
+func (cnc *NodeController) Run(stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	// The following loops run communicate with the APIServer with a worst case complexity
@@ -115,7 +118,7 @@ func (cnc *CloudNodeController) Run(stopCh <-chan struct{}) {
 }
 
 // UpdateNodeStatus updates the node status, such as node addresses
-func (cnc *CloudNodeController) UpdateNodeStatus() {
+func (cnc *NodeController) UpdateNodeStatus() {
 	instances, ok := cnc.cloud.Instances()
 	if !ok {
 		utilruntime.HandleError(fmt.Errorf("failed to get instances from cloud provider"))
@@ -134,7 +137,7 @@ func (cnc *CloudNodeController) UpdateNodeStatus() {
 }
 
 // UpdateNodeAddress updates the nodeAddress of a single node
-func (cnc *CloudNodeController) updateNodeAddress(node *v1.Node, instances cloudprovider.Instances) {
+func (cnc *NodeController) updateNodeAddress(node *v1.Node, instances cloudprovider.Instances) {
 	// Do not process nodes that are still tainted
 	cloudTaint := getCloudTaint(node.Spec.Taints)
 	if cloudTaint != nil {
@@ -197,7 +200,8 @@ func (cnc *CloudNodeController) updateNodeAddress(node *v1.Node, instances cloud
 	}
 }
 
-func (cnc *CloudNodeController) UpdateCloudNode(_, newObj interface{}) {
+// UpdateNode handles update events from the NodeInformer.
+func (cnc *NodeController) UpdateNode(_, newObj interface{}) {
 	node, ok := newObj.(*v1.Node)
 	if !ok {
 		utilruntime.HandleError(fmt.Errorf("unexpected object type: %v", newObj))
@@ -213,8 +217,8 @@ func (cnc *CloudNodeController) UpdateCloudNode(_, newObj interface{}) {
 	cnc.initializeNode(node)
 }
 
-// AddCloudNode handles initializing new nodes registered with the cloud taint.
-func (cnc *CloudNodeController) AddCloudNode(obj interface{}) {
+// AddNode handles initializing new nodes registered with the cloud taint.
+func (cnc *NodeController) AddNode(obj interface{}) {
 	node := obj.(*v1.Node)
 
 	cloudTaint := getCloudTaint(node.Spec.Taints)
@@ -226,8 +230,8 @@ func (cnc *CloudNodeController) AddCloudNode(obj interface{}) {
 	cnc.initializeNode(node)
 }
 
-// This processes nodes that were added into the cluster, and cloud initialize them if appropriate
-func (cnc *CloudNodeController) initializeNode(node *v1.Node) {
+// initializeNode processes nodes that were added into the cluster, and cloud initialize them if appropriate.
+func (cnc *NodeController) initializeNode(node *v1.Node) {
 
 	instances, ok := cnc.cloud.Instances()
 	if !ok {
@@ -235,7 +239,7 @@ func (cnc *CloudNodeController) initializeNode(node *v1.Node) {
 		return
 	}
 
-	err := clientretry.RetryOnConflict(UpdateNodeSpecBackoff, func() error {
+	err := clientretry.RetryOnConflict(updateNodeSpecBackoff, func() error {
 		// TODO(wlan0): Move this logic to the route controller using the node taint instead of condition
 		// Since there are node taints, do we still need this?
 		// This condition marks the node as unusable until routes are initialized in the cloud provider

@@ -149,7 +149,7 @@ func startNodeLifecycleController(ctx ControllerContext) (http.Handler, bool, er
 }
 
 func startCloudNodeLifecycleController(ctx ControllerContext) (http.Handler, bool, error) {
-	cloudNodeLifecycleController, err := cloudcontroller.NewCloudNodeLifecycleController(
+	cloudNodeLifecycleController, err := cloudcontroller.NewNodeLifecycleController(
 		ctx.InformerFactory.Core().V1().Nodes(),
 		// cloud node lifecycle controller uses existing cluster role from node-controller
 		ctx.ClientBuilder.ClientOrDie("node-controller"),

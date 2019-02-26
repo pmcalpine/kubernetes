@@ -102,7 +102,7 @@ func Test_NodesDeleted(t *testing.T) {
 			},
 			fakeCloud: &fakecloud.FakeCloud{
 				ExistsByProviderID: false,
-				ErrByProviderID:    errors.New("err!"),
+				ErrByProviderID:    errors.New("err"),
 			},
 			deleteNodes: []*v1.Node{},
 		},
@@ -246,7 +246,7 @@ func Test_NodesDeleted(t *testing.T) {
 			}
 
 			eventBroadcaster := record.NewBroadcaster()
-			cloudNodeLifecycleController := &CloudNodeLifecycleController{
+			cloudNodeLifecycleController := &NodeLifecycleController{
 				nodeLister:        nodeInformer.Lister(),
 				kubeClient:        testcase.fnh,
 				cloud:             testcase.fakeCloud,
@@ -351,7 +351,7 @@ func Test_NodesShutdown(t *testing.T) {
 			},
 			fakeCloud: &fakecloud.FakeCloud{
 				NodeShutdown:            false,
-				ErrShutdownByProviderID: errors.New("err!"),
+				ErrShutdownByProviderID: errors.New("err"),
 			},
 			updatedNodes: []*v1.Node{},
 		},
@@ -427,7 +427,7 @@ func Test_NodesShutdown(t *testing.T) {
 			}
 
 			eventBroadcaster := record.NewBroadcaster()
-			cloudNodeLifecycleController := &CloudNodeLifecycleController{
+			cloudNodeLifecycleController := &NodeLifecycleController{
 				nodeLister:        nodeInformer.Lister(),
 				kubeClient:        testcase.fnh,
 				cloud:             testcase.fakeCloud,

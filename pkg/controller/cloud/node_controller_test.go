@@ -221,7 +221,7 @@ func TestNodeInitialized(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:                fnh,
 		nodeInformer:              factory.Core().V1().Nodes(),
 		cloud:                     fakeCloud,
@@ -230,7 +230,7 @@ func TestNodeInitialized(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -286,7 +286,7 @@ func TestNodeIgnored(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:   fnh,
 		nodeInformer: factory.Core().V1().Nodes(),
 		cloud:        fakeCloud,
@@ -294,7 +294,7 @@ func TestNodeIgnored(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 	assert.Equal(t, 0, len(fnh.UpdatedNodes), "Node was wrongly updated")
 
 }
@@ -359,7 +359,7 @@ func TestGCECondition(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:   fnh,
 		nodeInformer: factory.Core().V1().Nodes(),
 		cloud:        fakeCloud,
@@ -367,7 +367,7 @@ func TestGCECondition(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -448,7 +448,7 @@ func TestZoneInitialized(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:   fnh,
 		nodeInformer: factory.Core().V1().Nodes(),
 		cloud:        fakeCloud,
@@ -456,7 +456,7 @@ func TestZoneInitialized(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -537,7 +537,7 @@ func TestNodeAddresses(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:                fnh,
 		nodeInformer:              factory.Core().V1().Nodes(),
 		cloud:                     fakeCloud,
@@ -546,7 +546,7 @@ func TestNodeAddresses(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -649,7 +649,7 @@ func TestNodeProvidedIPAddresses(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:                fnh,
 		nodeInformer:              factory.Core().V1().Nodes(),
 		cloud:                     fakeCloud,
@@ -658,7 +658,7 @@ func TestNodeProvidedIPAddresses(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -859,7 +859,7 @@ func TestNodeAddressesNotUpdate(t *testing.T) {
 		Err:                nil,
 	}
 
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:   fnh,
 		nodeInformer: factory.Core().V1().Nodes(),
 		cloud:        fakeCloud,
@@ -938,7 +938,7 @@ func TestNodeProviderID(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:                fnh,
 		nodeInformer:              factory.Core().V1().Nodes(),
 		cloud:                     fakeCloud,
@@ -947,7 +947,7 @@ func TestNodeProviderID(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")
@@ -1021,7 +1021,7 @@ func TestNodeProviderIDAlreadySet(t *testing.T) {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	cloudNodeController := &CloudNodeController{
+	cloudNodeController := &NodeController{
 		kubeClient:                fnh,
 		nodeInformer:              factory.Core().V1().Nodes(),
 		cloud:                     fakeCloud,
@@ -1030,7 +1030,7 @@ func TestNodeProviderIDAlreadySet(t *testing.T) {
 	}
 	eventBroadcaster.StartLogging(klog.Infof)
 
-	cloudNodeController.AddCloudNode(fnh.Existing[0])
+	cloudNodeController.AddNode(fnh.Existing[0])
 
 	assert.Equal(t, 1, len(fnh.UpdatedNodes), "Node was not updated")
 	assert.Equal(t, "node0", fnh.UpdatedNodes[0].Name, "Node was not updated")

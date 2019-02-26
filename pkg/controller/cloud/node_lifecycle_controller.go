@@ -44,14 +44,15 @@ const (
 	deleteNodeEvent = "DeletingNode"
 )
 
+// ShutdownTaint indicates the node has been shutdown.
 var ShutdownTaint = &v1.Taint{
 	Key:    schedulerapi.TaintNodeShutdown,
 	Effect: v1.TaintEffectNoSchedule,
 }
 
-// CloudNodeLifecycleController is responsible for deleting/updating kubernetes
+// NodeLifecycleController is responsible for deleting/updating kubernetes
 // nodes that have been deleted/shutdown on the cloud provider
-type CloudNodeLifecycleController struct {
+type NodeLifecycleController struct {
 	kubeClient clientset.Interface
 	nodeLister v1lister.NodeLister
 	recorder   record.EventRecorder
@@ -64,11 +65,12 @@ type CloudNodeLifecycleController struct {
 	nodeMonitorPeriod time.Duration
 }
 
-func NewCloudNodeLifecycleController(
+// NewNodeLifecycleController creates a NodeLifecycleController object.
+func NewNodeLifecycleController(
 	nodeInformer coreinformers.NodeInformer,
 	kubeClient clientset.Interface,
 	cloud cloudprovider.Interface,
-	nodeMonitorPeriod time.Duration) (*CloudNodeLifecycleController, error) {
+	nodeMonitorPeriod time.Duration) (*NodeLifecycleController, error) {
 
 	eventBroadcaster := record.NewBroadcaster()
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "cloud-node-lifecycle-controller"})
@@ -89,7 +91,7 @@ func NewCloudNodeLifecycleController(
 		return nil, errors.New("cloud provider does not support instances")
 	}
 
-	c := &CloudNodeLifecycleController{
+	c := &NodeLifecycleController{
 		kubeClient:        kubeClient,
 		nodeLister:        nodeInformer.Lister(),
 		recorder:          recorder,
@@ -102,7 +104,7 @@ func NewCloudNodeLifecycleController(
 
 // Run starts the main loop for this controller. Run is blocking so should
 // be called via a goroutine
-func (c *CloudNodeLifecycleController) Run(stopCh <-chan struct{}) {
+func (c *NodeLifecycleController) Run(stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 
 	// The following loops run communicate with the APIServer with a worst case complexity
@@ -117,7 +119,7 @@ func (c *CloudNodeLifecycleController) Run(stopCh <-chan struct{}) {
 // MonitorNodes checks to see if nodes in the cluster have been deleted
 // or shutdown. If deleeted, it deletes the node resource. If shutdown it
 // applies a shutdown taint to the node
-func (c *CloudNodeLifecycleController) MonitorNodes() {
+func (c *NodeLifecycleController) MonitorNodes() {
 	instances, ok := c.cloud.Instances()
 	if !ok {
 		utilruntime.HandleError(fmt.Errorf("failed to get instances from cloud provider"))
